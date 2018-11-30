@@ -1,26 +1,23 @@
+// AUTHORS
+// MYKOLA KUSYY
+// GARRETT MCLAUGHLIN
 #ifndef MEM_TREE_H
 #define MEM_TREE_H
 
 
 #include <stdlib.h>
 
-enum Color {RED, BLACK};
-enum Status {FREE, ALLOCATED};
 
-struct Node{
-	enum Status status;
-	enum Color color;
-	size_t start_addr;
-	size_t end_addr; //for ease of use
-	size_t length;
-	struct Node* left;
-	struct Node* right;
-};
+enum State {FREE, ALLOCATED};
 
-struct Node* createNode(size_t start_addr, size_t size);
 void deleteNode(struct Node* node);
-void insert(struct Node* node);
-struct Node* search(struct Node* node);
+void insert(void* ptr, size_t size);
 
+struct Range* rangeSearch(void* ptr, size_t size);
+struct Node* search(size_t addr);
+enum State getState(size_t addr);
+void setState(size_t addr, enum State s);
+
+void printTree(struct Node* root);
 //split??
 #endif

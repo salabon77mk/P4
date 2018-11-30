@@ -1,3 +1,6 @@
+// AUTHORS
+// MYKOLA KUSYY
+// GARRETT MCLAUGHLIN
 #include "mem_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
