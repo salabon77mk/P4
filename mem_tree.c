@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "mem_tree.h"
 
-// TODO: search, min, getMin, delete, part of insert
 // TODO 
 
 static enum Color {RED, BLACK};
@@ -82,7 +81,7 @@ void deleteNode(void* key){
 	}
 }
 
-// TODO
+// TODO MEMORY DESTRUCTION
 static struct Node* delete(struct Node* parent, void* key){
 	if(compare(key, parent->start_addr) == LESS){
 		if(!isRed(parent->left) && !isRed(parent->left->left)){
@@ -91,34 +90,54 @@ static struct Node* delete(struct Node* parent, void* key){
 		parent->left = delete(parent->left, key);
 	}
 	else{
-		if(){
+		if(isRed(parent->left){
+			parent = rotateright(parent);
 		}
-		if(){
+		if(compare(key, parent->start_addr) == EQUAL && (parent->right == NULL)){
+			return NULL;
 		}
-		if(){
+		if(!isRed(parent->right) && !isRed(parent->right->left)){
+			parent = moveRedright(parent);
 		}
-		if(){
-		/*
-		struct Node* node = min(parent->right);
-		parent->start_addr = node->start_addr;		
-		parent->length = node->length;
-		parent->status = node->status;?????
+		if(compare(key, parent->start_addr) == EQUAL){
+		
+			struct Node* node = min(parent->right);
+			parent->start_addr = node->start_addr;		
+			parent->length = node->length;
+			parent->status = node->status; // ????
 
-		parent->right = deleteMin(parent->right);
-		*/
-
+			parent->right = deleteMin(parent->right);
+		
 		}
 		else parent->right = delete(parent->right, key);
 	}
 
 	return balance(parent);
 }
-static struct Node* deleteMin(){
 
+/* Uncomment later if needed
+void deleteMin() {
+	if (!isRed(root->left) && !isRed(root->right))
+		root->color = RED;
+
+	root = deleteMin(root);
+	if (root != NULL) root->color = BLACK;
+}
+*/
+
+static struct Node* deleteMin(struct Node* parent){
+	if (parent->left == NULL) return NULL;
+	
+	if (!isRed(parent->left) && !isRed(parent->left->left))
+		parent = moveRedLeft(parent);
+
+	parent->left = deleteMin(parent->left);
+	return balance(parent);
 }
 
 static struct Node* min(struct Node* parent){
-
+	if (parent->left == NULL) return parent;
+	else return min(parent->left);
 }
 
 static struct Node* balance(struct Node* node){
@@ -143,7 +162,13 @@ static struct Node* insertNode(struct Node* node, void* ptr, size_t size ){
 	if(node == NULL){
 		return createNode(void* ptr, size_t size);
 	}
-	//enum Comparator comp = compare();
+	
+	enum Comparator cmp = compare(ptr, node->start_addr);
+	if (cmp == LESS) node->left = insertNode(node->left, ptr, size);
+	else if (cmp == GREATER) node->right = insertNode(node->right, ptr, size);
+	else node->length = size;
+
+
 	if(isRed(node->right) && !isRed(node->left)){
 		node = rotateLeft(node);
 	}
@@ -169,12 +194,21 @@ static enum Comparator compare(void* ptr1, void* ptr2){
 	}
 }
 
-struct Node* search(size_t addr){
-
+struct Node* search(void* key){
+	/* if (key == NULL)
+		printf("Argument is null in method: search");
+	*/
+	return get(root, key);
 }
 
-static struct Node* searchHelp(struct Node* node, size_t addr){
-	
+static struct Node* searchHelp(struct Node* node, void* key){
+	while (node != NULL) {
+		enum Comparator cmp = compare(key, node->start_addr);
+		if (cmp == LESS) node = node->left;
+		else if (cmp == GREATER) node = node->right;
+		else return node;
+	}
+	return null;
 }
 
 static int isRed(struct Node* node){
