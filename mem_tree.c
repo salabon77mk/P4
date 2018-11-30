@@ -238,6 +238,16 @@ static void nullCheck(void* ptr){
 		exit(-1);	
 	}
 }
+
+enum State getState(void* key){
+	struct Node* node = search(key);
+	return node->state;
+}
+
+void setState(void* key, enum State newState){
+	struct Node* node = search(key);
+	node->state = newState;
+}
 /*
 static struct Range_Nodes* createRange(struct Node** nodes, size_t size){
 	struct Range_Nodes* rangeNodes = (struct Range_Nodes*) malloc(sizeof(struct Range_Nodes) * size);
@@ -246,7 +256,7 @@ static struct Range_Nodes* createRange(struct Node** nodes, size_t size){
 	rangeNodes->size = size;
 	return rangeNodes;
 }
-struct Range_Nodes* rangeSearch(struct Node* root, size_t min, size_t max){
+struct Range_Nodes* rangeSearch(struct Node* root, void* min, void* max){
 	size_t size = 1024;
 	size_t index = 0;
 
@@ -261,8 +271,8 @@ struct Range_Nodes* rangeSearch(struct Node* root, size_t min, size_t max){
 	return result;
 }
 
-static struct void 
-fillOut(struct Node*** nodeArr, size_t* size, size_t* index, struct Node* node,  size_t min, size_t max){
+static struct Node** 
+fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node,  size_t min, size_t max){
 	if(node == NULL){
 		return;
 	}
