@@ -104,6 +104,22 @@ void memcheck537(void* ptr, size_t size){
 			fprintf(stderr, "Memory range from %p to %p lies within freed memory\n", ptr, max);
 			exit(-1);
 		}
+		//edge cases for first and last node
+		if(i == 0){
+			if(ptr < range->nodes[i]->start_addr){
+				fprintf(stderr, "ptr: %p is out of bounds for address the current node at addr: %p"
+						, ptr, range->nodes[i]->start_addr);
+				exit(-1);
+			}
+		}
+		else if(i == range->num_nodes - 1){
+			void* max = ptr + size;
+			if(max > range->nodes[i]->end_addr){
+				fprintf(stderr, "ptr: %p is out of bounds for address the current node at addr: %p"
+						, ptr, range->nodes[i]->start_addr);
+				exit(-1);
+			}
+		}
 	}
 	destroyRange(&range);
 }
@@ -147,22 +163,3 @@ static void* reallocWrapper(void* ptr, size_t size){
 	ptr = newData;
 	return ptr;
 }
-
-
-
-
-	/*
-	if(range->num_nodes == 1){ //special case
-		singleNodeCase(range->nodes[0], mem, max, size);
-	}
-	else{ //multiple nodes to handle
-		checkAllFree(range);
-		//now we have to handle the nodes
-		for(size_t i = 1; i < range->num_nodes; i++){ //delete all but the first one
-			delete(range->nodes[i]);
-		}
-		singleNodeCase(range->nodes[0], mem, max, size);
-	}
-	destroyRange(&range);
-	return mem;
-	*/

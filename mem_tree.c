@@ -60,13 +60,11 @@ struct Node* createNode(void* key, size_t size){
 	return node;
 }
 
-enum State getState(void* key){
-	struct Node* node = search(key);
+enum State getState(struct Node* node){
 	return node->state;
 }
 
-void setState(void* key, enum State newState){
-	struct Node* node = search(key);
+void setState(struct Node* node, enum State newState){
 	node->state = newState;
 }
 
@@ -384,24 +382,17 @@ struct Range* rangeSearch(void* low, void* high){
 
 static void 
 fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, void* low, void* high){
-
-	/*
-	if(*index >= *size){
-		(*size) *= 2;
-		struct Node** newNodes = (struct Node**)  realloc(nodeArr, sizeof(struct Node*) * (*size));
-		nullCheck(newNodes);
-		nodeArr = newNodes;
+	if(node == NULL){
+		return;
 	}
-	*/
 	if(*index >= *size){
 		nodeArr = (struct Node**) doubleAllocatedMem(nodeArr, size, sizeof(struct Node*));
 	}
-
 	
 	if(low < node->start_addr && node->left != NULL){
 		fillOut(nodeArr, size, index, node->left, low, high);
 	}
-	if(!(high < node->start_addr) || !(low > node->end_addr)){
+	if(!(high < node->start_addr) && !(low > node->end_addr)){
 		nodeArr[(*index)] = node;
 		(*index)++;
 		(*size)++;

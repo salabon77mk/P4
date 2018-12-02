@@ -1,8 +1,8 @@
 // AUTHORS
 // MYKOLA KUSYY
 // GARRETT MCLAUGHLIN
-#ifndef 537MALLOC_H
-#define 537MALLOC_H
+#ifndef _537MALLOC_H
+#define _537MALLOC_H
 
 #include <stdlib.h>
 

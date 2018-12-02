@@ -31,8 +31,8 @@ void insert(void* ptr, size_t size);
 
 struct Range* rangeSearch(void* low, void* high);
 struct Node* search(void* key);
-enum State getState(void* key);
-void setState(void* key, enum State newState);
+enum State getState(struct Node* node);
+void setState(struct Node* node, enum State newState);
 void destroyRange(struct Range** range);
 
 void preorderPrint();
