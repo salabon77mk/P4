@@ -30,7 +30,7 @@ void deleteNode(void* ptr);
 void insert(void* ptr, size_t size);
 
 struct Range* rangeSearch(void* low, void* high);
-void* search(void* key);
+struct Node* search(void* key);
 enum State getState(void* key);
 void setState(void* key, enum State newState);
 void destroyRange(struct Range** range);

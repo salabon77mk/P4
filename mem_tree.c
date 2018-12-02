@@ -43,6 +43,7 @@ static void printCont(struct Node* node);
 static struct Range* createRange(struct Node** nodes, size_t size);
 static void 
 fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node,  void* low, void* high);
+static void* doubleAllocatedMem(void* data, size_t* currSize, size_t typeSize);
 
 struct Node* createNode(void* key, size_t size){
 	struct Node* node = (struct Node*) malloc(sizeof(struct Node));
@@ -210,7 +211,7 @@ static enum Comparator compare(void* val1, void* val2){
 	
 }
 
-void* search(void* key){
+struct Node* search(void* key){
 	return searchHelp(root, key);
 }
 
@@ -225,7 +226,7 @@ static void* searchHelp(struct Node* node, void* key){
 			node = node->right;
 		}
 		else{
-		       	return node->start_addr;
+		       	return node;
 		}
 	}
 	return NULL;
@@ -371,24 +372,29 @@ struct Range* rangeSearch(void* low, void* high){
 	nullCheck(nodes);
 
 	fillOut(nodes, &size, &index, root, low, high);
-	if(index > 0){
-		struct Range* result = createRange(nodes, index);
-		return result;
+	if(index == 0){
+		free(nodes);
+		nodes = NULL;
+		return NULL;
 	}
-	//free otherwise
-	free(nodes);
-	nodes = NULL;
-	return NULL;
+
+	struct Range* result = createRange(nodes, index);
+	return result;
 }
 
 static void 
 fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, void* low, void* high){
 
+	/*
 	if(*index >= *size){
 		(*size) *= 2;
-		struct Node** newNodes = (struct Node**)  realloc(nodeArr, sizeof(struct Nodes*) * (*size));
+		struct Node** newNodes = (struct Node**)  realloc(nodeArr, sizeof(struct Node*) * (*size));
 		nullCheck(newNodes);
 		nodeArr = newNodes;
+	}
+	*/
+	if(*index >= *size){
+		nodeArr = (struct Node**) doubleAllocatedMem(nodeArr, size, sizeof(struct Node*));
 	}
 
 	
@@ -406,3 +412,13 @@ fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, v
 
 }
 
+static void* doubleAllocatedMem(void* data, size_t* currSize, size_t typeSize){
+	void* newData =  realloc(data, ((*currSize) * 2) * typeSize);
+	if( newData == NULL){
+		fprintf(stderr, "Failed to realloc in mem_manage.c:doubleAllocatedMem");
+		exit(-1);
+	}
+	*currSize = (*currSize) * 2;
+	data = newData;
+	return data;
+}
