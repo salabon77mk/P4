@@ -211,9 +211,6 @@ static enum Comparator compare(void* val1, void* val2){
 }
 
 void* search(void* key){
-	/* if (key == NULL)
-		printf("Argument is null in method: search");
-	*/
 	return searchHelp(root, key);
 }
 
@@ -386,6 +383,7 @@ struct Range* rangeSearch(void* low, void* high){
 
 static void 
 fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, void* low, void* high){
+
 	if(*index >= *size){
 		(*size) *= 2;
 		struct Node** newNodes = (struct Node**)  realloc(nodeArr, sizeof(struct Nodes*) * (*size));
@@ -394,15 +392,15 @@ fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, v
 	}
 
 	
+	if(low < node->start_addr && node->left != NULL){
+		fillOut(nodeArr, size, index, node->left, low, high);
+	}
 	if(!(high < node->start_addr) || !(low > node->end_addr)){
-		nodeArr[*index] = node;
+		nodeArr[(*index)] = node;
 		(*index)++;
 		(*size)++;
 	}
-	if(high < node->start_addr && node->left != NULL){
-		fillOut(nodeArr, size, index, node->left, low, high);
-	}
-	if(low > node->end_addr && node->right != NULL){
+	if(high > node->end_addr && node->right != NULL){
 		fillOut(nodeArr, size, index, node->right, low, high);
 	}
 
