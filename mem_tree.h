@@ -9,15 +9,33 @@
 
 
 enum State {FREE, ALLOCATED};
+enum Color {RED, BLACK};
 
-void deleteNode(struct Node* node);
+struct Range{
+	struct Node** nodes;
+	size_t num_nodes;
+};
+
+struct Node{
+	enum State state;
+	enum Color color;
+	void* start_addr;
+	size_t length;
+	void* end_addr;
+	struct Node* left;
+	struct Node* right;
+};
+
+void deleteNode(void* ptr);
 void insert(void* ptr, size_t size);
 
-struct Range* rangeSearch(void* ptr, size_t size);
-struct Node* search(void* key);
+struct Range* rangeSearch(void* low, void* high);
+void* search(void* key);
 enum State getState(void* key);
-void setState(size_t addr, enum State newState);
+void setState(void* key, enum State newState);
+void destroyRange(struct Range** range);
 
-void printTree(struct Node* root);
+void preorderPrint();
+void inorderPrint();
 //split??
 #endif

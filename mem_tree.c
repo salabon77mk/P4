@@ -1,29 +1,18 @@
 // AUTHORS
 // MYKOLA KUSYY
 // GARRETT MCLAUGHLIN
-# include <stdlib.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "mem_tree.h"
 
 // TODO 
 
-static enum Color {RED, BLACK};
-static enum Comparator{
+enum Comparator{
 	LESS,
 	EQUAL,
 	GREATER
 };
 
-struct Node{
-	enum State state;
-	enum Color color;
-	unsigned int height; //debug purps
-	void* start_addr;
-	size_t length;
-	void* end_addr;
-	struct Node* left;
-	struct Node* right;
-};
 static struct Node* root = NULL;
 
 static void flipColors(struct Node* parent);
@@ -35,31 +24,33 @@ static struct Node* moveRedLeft(struct Node* node);
 static struct Node* moveRedRight(struct Node* node);
 
 static struct Node* insertNode(struct Node* node, void* ptr, size_t size );
-static struct Node* searchHelp(struct Node* node, size_t addr); //convert to size_t in 537malloc.c
+
+static void* searchHelp(struct Node* node, void* key);
+static int contains(void* ptr);
 static struct Node* balance(struct Node* node);
 
 
 static struct Node* delete(struct Node* parent, void* ptr);
 static struct Node* deleteMin();
 static struct Node* min(struct Node* parent);
+static enum Comparator compare(void* val1, void* val2);
 
 static void nullCheck(void* ptr);
-static struct Range_Nodes* createRange(struct Node** nodes, size_t size);
-static int compare(size_t val1, size_t val2);
+static void preorderPrintHelp(struct Node* node);
+static void inorderPrintHelp(struct Node* node);
+static void printCont(struct Node* node);
 
-// pointer indirection
-// low = key value
-static struct void fillOut
-(struct Nodes*** nodes, size_t* size, size_t* index, struct Node* currNode, size_t low, size_t max); 
+static struct Range* createRange(struct Node** nodes, size_t size);
+static void 
+fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node,  void* low, void* high);
 
-struct Node* createNode(void* ptr, size_t size){
+struct Node* createNode(void* key, size_t size){
 	struct Node* node = (struct Node*) malloc(sizeof(struct Node));
-	nullCheck(nodes);
+	nullCheck(node);
 
-	node->status = ALLOCATED; //defaults
+	node->state = ALLOCATED; //defaults
 	node->color = RED; //defaults
-	node->height = 0;
-	node->start_addr = ptr
+	node->start_addr = key;
 	node->length = size;
 	node->end_addr = node->start_addr + size;
 	node->left = NULL;
@@ -68,8 +59,21 @@ struct Node* createNode(void* ptr, size_t size){
 	return node;
 }
 
+enum State getState(void* key){
+	struct Node* node = search(key);
+	return node->state;
+}
+
+void setState(void* key, enum State newState){
+	struct Node* node = search(key);
+	node->state = newState;
+}
 
 void deleteNode(void* key){
+	if(!contains(key)){
+		return;
+	}
+
 	if(!isRed(root->left) && !isRed(root->right)){
 		root->color = RED;
 	}
@@ -84,27 +88,32 @@ void deleteNode(void* key){
 // TODO MEMORY DESTRUCTION
 static struct Node* delete(struct Node* parent, void* key){
 	if(compare(key, parent->start_addr) == LESS){
-		if(!isRed(parent->left) && !isRed(parent->left->left)){
-			parent = moveRedLeft(parent);
+		if(parent->left != NULL){
+			if(!isRed(parent->left) && !isRed(parent->left->left)){
+				parent = moveRedLeft(parent);
+			}
+			parent->left = delete(parent->left, key);
 		}
-		parent->left = delete(parent->left, key);
 	}
 	else{
-		if(isRed(parent->left){
-			parent = rotateright(parent);
+		if(isRed(parent->left)){
+			parent = rotateRight(parent);
 		}
 		if(compare(key, parent->start_addr) == EQUAL && (parent->right == NULL)){
 			return NULL;
 		}
-		if(!isRed(parent->right) && !isRed(parent->right->left)){
-			parent = moveRedright(parent);
+		if(parent->right != NULL){
+			if(!isRed(parent->right) && !isRed(parent->right->left)){
+				parent = moveRedRight(parent);
+			}
 		}
 		if(compare(key, parent->start_addr) == EQUAL){
 		
 			struct Node* node = min(parent->right);
 			parent->start_addr = node->start_addr;		
 			parent->length = node->length;
-			parent->status = node->status; // ????
+			parent->state = node->state; // ????
+			parent->end_addr = node->end_addr;
 
 			parent->right = deleteMin(parent->right);
 		
@@ -126,7 +135,14 @@ void deleteMin() {
 */
 
 static struct Node* deleteMin(struct Node* parent){
-	if (parent->left == NULL) return NULL;
+	if (parent->left == NULL){
+		free(parent->start_addr);
+		parent->start_addr = NULL;
+		parent->end_addr = NULL;
+		free(parent);
+		parent = NULL;
+		return NULL;
+	}
 	
 	if (!isRed(parent->left) && !isRed(parent->left->left))
 		parent = moveRedLeft(parent);
@@ -148,7 +164,7 @@ static struct Node* balance(struct Node* node){
 		node = rotateRight(node);
 	}
 	if(isRed(node->left) && isRed(node->right)){
-		node = flipColors(node);
+		flipColors(node);
 	}
 	return node;
 }
@@ -158,15 +174,15 @@ void insert(void* ptr, size_t size){
 	root->color = BLACK;
 }
 
-static struct Node* insertNode(struct Node* node, void* ptr, size_t size ){
+static struct Node* insertNode(struct Node* node, void* ptr, size_t size){
 	if(node == NULL){
-		return createNode(void* ptr, size_t size);
+		return createNode(ptr, size);
 	}
 	
 	enum Comparator cmp = compare(ptr, node->start_addr);
 	if (cmp == LESS) node->left = insertNode(node->left, ptr, size);
 	else if (cmp == GREATER) node->right = insertNode(node->right, ptr, size);
-	else node->length = size;
+//	else node->length = size;
 
 
 	if(isRed(node->right) && !isRed(node->left)){
@@ -176,42 +192,61 @@ static struct Node* insertNode(struct Node* node, void* ptr, size_t size ){
 		node = rotateRight(node);
 	}
 	if(isRed(node->left) && isRed(node->right)){
-		node = flipColors(node);			
+		flipColors(node);			
 	}
 
 	return node;
 }
 
-static enum Comparator compare(void* ptr1, void* ptr2){
+static enum Comparator compare(void* val1, void* val2){
 	if(val1 < val2){
 		return LESS;
 	}
 	else if(val1 > val2){
 		return GREATER;
 	}
-	else{
-		return EQUAL;
-	}
+	
+	return EQUAL;
+	
 }
 
-struct Node* search(void* key){
+void* search(void* key){
 	/* if (key == NULL)
 		printf("Argument is null in method: search");
 	*/
-	return get(root, key);
+	return searchHelp(root, key);
 }
 
-static struct Node* searchHelp(struct Node* node, void* key){
+static void* searchHelp(struct Node* node, void* key){
 	while (node != NULL) {
 		enum Comparator cmp = compare(key, node->start_addr);
-		if (cmp == LESS) node = node->left;
-		else if (cmp == GREATER) node = node->right;
-		else return node;
+
+		if (cmp == LESS){       
+			node = node->left;
+		}
+		else if (cmp == GREATER){ 
+			node = node->right;
+		}
+		else{
+		       	return node->start_addr;
+		}
 	}
-	return null;
+	return NULL;
+}
+
+static int contains(void* key){
+	struct Node* node = search(key);
+	if(node != NULL){
+		return 1;
+	}
+	return 0;
 }
 
 static int isRed(struct Node* node){
+	if(node == NULL){
+		return 0;
+	}
+
 	if(node->color == RED){
 		return 1;
 	}
@@ -219,11 +254,11 @@ static int isRed(struct Node* node){
 }
 
 static struct Node* rotateLeft(struct Node* parent){
-	struct Node* swap = parent.right;
-	parent.right = swap.left;
-	swap.left = parent;
-	swap.color = parent.color;
-	parent.color = RED;
+	struct Node* swap = parent->right;
+	parent->right = swap->left;
+	swap->left = parent;
+	swap->color = parent->color;
+	parent->color = RED;
 	return swap;
 }
 
@@ -238,32 +273,36 @@ static struct Node* rotateRight(struct Node* parent){
 
 static struct Node* moveRedLeft(struct Node* node){
 	flipColors(node);
-	if(isRed(node->right->left)){
-		node->right = rotateRight(node->right);
-		node = rotateLeft(node);
-		flipColors(node);
+	if(node->right != NULL){
+		if(isRed(node->right->left)){
+			node->right = rotateRight(node->right);
+			node = rotateLeft(node);
+			flipColors(node);
+		}
 	}
 	return node;
 }
 
 static struct Node* moveRedRight(struct Node* node){
 	flipColors(node);
-	if(isRed(node->left->left)){
-		node = rotateRight(node);
-		flipColors(node);
+	if(node->left != NULL){
+		if(isRed(node->left->left)){
+			node = rotateRight(node);
+			flipColors(node);
+		}
 	}
 	return node;
 }
 
 static void flipColors(struct Node* parent){
 	parent->color = RED;
-	parent->left->color = BLACK;
-	parent->right->color = BLACK;
+	if(parent->left != NULL){
+		parent->left->color = BLACK;
+	}
 
-}
-
-void printTree(struct Node* root){
-
+	if(parent->right != NULL){
+		parent->right->color = BLACK;
+	}
 }
 
 static void nullCheck(void* ptr){
@@ -273,52 +312,99 @@ static void nullCheck(void* ptr){
 	}
 }
 
-enum State getState(void* key){
-	struct Node* node = search(key);
-	return node->state;
+
+void preorderPrint(){
+	preorderPrintHelp(root);	
 }
 
-void setState(void* key, enum State newState){
-	struct Node* node = search(key);
-	node->state = newState;
+static void preorderPrintHelp(struct Node* node){
+	if(node == NULL){
+		return;
+	}
+
+	printCont(node);
+	preorderPrintHelp(node->left);
+	preorderPrintHelp(node->right);
 }
-/*
-static struct Range_Nodes* createRange(struct Node** nodes, size_t size){
-	struct Range_Nodes* rangeNodes = (struct Range_Nodes*) malloc(sizeof(struct Range_Nodes) * size);
+
+void inorderPrint(){
+	inorderPrintHelp(root);
+}
+
+
+static void inorderPrintHelp(struct Node* node){
+	if(node == NULL){
+		return;
+	}
+
+	inorderPrintHelp(node->left);
+	printCont(node);
+	inorderPrintHelp(node->right);
+}
+
+static void printCont(struct Node* node){
+ 	printf("START ADDRESS %p\n", node->start_addr);
+	printf("END ADDDRESS %p\n", node->end_addr);
+	printf("SIZE %zu\n", node->length);
+	printf("STATE %d WHERE FREE = 0, ALLOC = 1\n", node->state);
+	printf("\n");
+}
+
+
+static struct Range* createRange(struct Node** nodes, size_t size){
+	struct Range* rangeNodes = (struct Range*) malloc(sizeof(struct Range) * size);
 	nullCheck(rangeNodes);
 	rangeNodes->nodes = nodes;
-	rangeNodes->size = size;
+	rangeNodes->num_nodes = size;
 	return rangeNodes;
 }
-struct Range_Nodes* rangeSearch(struct Node* root, void* min, void* max){
+
+void destroyRange(struct Range** range){
+	free((*range)->nodes);
+	(*range)->nodes = NULL;
+	free(*range);
+	*range = NULL;
+}
+
+struct Range* rangeSearch(void* low, void* high){
 	size_t size = 1024;
 	size_t index = 0;
 
 	struct Node** nodes = (struct Node**) malloc(sizeof(struct Node*) * size);
 	nullCheck(nodes);
 
-	fillOut(&nodes, &size, &index, root, min, max);
-
-	// implement size checker
-
-	struct Range_Nodes* result = createRange(nodes, currSize);
-	return result;
+	fillOut(nodes, &size, &index, root, low, high);
+	if(index > 0){
+		struct Range* result = createRange(nodes, index);
+		return result;
+	}
+	//free otherwise
+	free(nodes);
+	nodes = NULL;
+	return NULL;
 }
 
-static struct Node** 
-fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node,  size_t min, size_t max){
-	if(node == NULL){
-		return;
+static void 
+fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node, void* low, void* high){
+	if(*index >= *size){
+		(*size) *= 2;
+		struct Node** newNodes = (struct Node**)  realloc(nodeArr, sizeof(struct Nodes*) * (*size));
+		nullCheck(newNodes);
+		nodeArr = newNodes;
 	}
 
-	if(*currSize >= *size){
-		*size *= 2;
-		*nodes = (struct Node**) realloc(sizeof(struct Node*) * (*size));
-		nullCheck(*nodes);
+	
+	if(!(high < node->start_addr) || !(low > node->end_addr)){
+		nodeArr[*index] = node;
+		(*index)++;
+		(*size)++;
+	}
+	if(high < node->start_addr && node->left != NULL){
+		fillOut(nodeArr, size, index, node->left, low, high);
+	}
+	if(low > node->end_addr && node->right != NULL){
+		fillOut(nodeArr, size, index, node->right, low, high);
 	}
 
-
-
-	//high low comparisons
 }
-*/
+

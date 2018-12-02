@@ -7,6 +7,7 @@
 
 
 // TODO: Add node to tree
+/*
 void* malloc537(size_t size){
 	if (size == 0) {
 		fprintf(stderr, "Attempting to call malloc on size of 0 bytes\n");
@@ -32,3 +33,5 @@ void* realloc537(void* ptr, size_t size){
 void memcheck537(void* ptr, size_t size){
 
 }
+
+*/
