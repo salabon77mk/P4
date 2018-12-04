@@ -1,11 +1,12 @@
 // AUTHORS
 // MYKOLA KUSYY
 // GARRETT MCLAUGHLIN
+//
+// IMPLEMENTED ROBERT SEDGEWICK'S RBTs FROM HIS ALGORITHMS 4TH EDITION TEXTBOOK
 #include <stdlib.h>
 #include <stdio.h>
 #include "mem_tree.h"
 
-// TODO 
 
 enum Comparator{
 	LESS,
@@ -13,37 +14,48 @@ enum Comparator{
 	GREATER
 };
 
+// root of the tree
 static struct Node* root = NULL;
 
-static void flipColors(struct Node* parent);
-static int isRed(struct Node* node);
+// constructor for node
 static struct Node* createNode(void* ptr, size_t size);
+
+
+// tree manipulation functions
+static void flipColors(struct Node* parent);
 static struct Node* rotateLeft(struct Node* parent);
 static struct Node* rotateRight(struct Node* parent);
 static struct Node* moveRedLeft(struct Node* node);
 static struct Node* moveRedRight(struct Node* node);
-
-static struct Node* insertNode(struct Node* node, void* ptr, size_t size );
-
-static void* searchHelp(struct Node* node, void* key);
-static int contains(void* ptr);
 static struct Node* balance(struct Node* node);
 
-
+// these are all helper functions for delete, insert, search
+static struct Node* insertNode(struct Node* node, void* ptr, size_t size );
+static void* searchHelp(struct Node* node, void* key);
 static struct Node* delete(struct Node* parent, void* ptr);
 static struct Node* deleteMin();
 static struct Node* min(struct Node* parent);
+
+// gives us information about the nodes in tree
+static int contains(void* ptr);
+static int isRed(struct Node* node);
 static enum Comparator compare(void* val1, void* val2);
 
-static void nullCheck(void* ptr);
+// utilities for printing
 static void preorderPrintHelp(struct Node* node);
 static void inorderPrintHelp(struct Node* node);
 static void printCont(struct Node* node);
 
+
+// range search related functions
 static struct Range* createRange(struct Node** nodes, size_t size);
 static void 
 fillOut(struct Node** nodeArr, size_t* size, size_t* index, struct Node* node,  void* low, void* high);
+
+// mem utils
+static void nullCheck(void* ptr);
 static void* doubleAllocatedMem(void* data, size_t* currSize, size_t typeSize);
+
 
 struct Node* createNode(void* key, size_t size){
 	struct Node* node = (struct Node*) malloc(sizeof(struct Node));
@@ -84,7 +96,6 @@ void deleteNode(void* key){
 	}
 }
 
-// TODO MEMORY DESTRUCTION
 static struct Node* delete(struct Node* parent, void* key){
 	if(compare(key, parent->start_addr) == LESS){
 		if(parent->left != NULL){
@@ -111,7 +122,7 @@ static struct Node* delete(struct Node* parent, void* key){
 			struct Node* node = min(parent->right);
 			parent->start_addr = node->start_addr;		
 			parent->length = node->length;
-			parent->state = node->state; // ????
+			parent->state = node->state; 
 			parent->end_addr = node->end_addr;
 
 			parent->right = deleteMin(parent->right);
@@ -123,16 +134,7 @@ static struct Node* delete(struct Node* parent, void* key){
 	return balance(parent);
 }
 
-/* Uncomment later if needed
-void deleteMin() {
-	if (!isRed(root->left) && !isRed(root->right))
-		root->color = RED;
-
-	root = deleteMin(root);
-	if (root != NULL) root->color = BLACK;
-}
-*/
-
+// frees allocated memory
 static struct Node* deleteMin(struct Node* parent){
 	if (parent->left == NULL){
 		free(parent->start_addr);
@@ -181,8 +183,6 @@ static struct Node* insertNode(struct Node* node, void* ptr, size_t size){
 	enum Comparator cmp = compare(ptr, node->start_addr);
 	if (cmp == LESS) node->left = insertNode(node->left, ptr, size);
 	else if (cmp == GREATER) node->right = insertNode(node->right, ptr, size);
-//	else node->length = size;
-
 
 	if(isRed(node->right) && !isRed(node->left)){
 		node = rotateLeft(node);

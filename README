@@ -1,0 +1,12 @@
+IMPORTANT MAKEFILE STUFF:
+Since we're submitting without a main file and gcc will get mad, if you would like to compile every file
+including a driver file in one go, modify the OBJ variable at the top by adding any additional files you need.
+
+We decided to use red black trees to represent the range tree, in particular, we implemented Robert Sedgewick's RBTs from his Algorithms 4th edition textbook.
+Various functions had to be adjusted or reimplemented altogether to work in a C environment and for this particular assignment such as delete and range search.
+
+In 537malloc, we had to figure out a way to deal with overlapping memory regions for malloc.
+We realized if there was a large amount of nodes, the simplest way to deal with such a range
+is to delete all but the first node which we treat as a base case of sorts where we would either
+restructure that one node or split it depending on the situation
+
